@@ -21,7 +21,7 @@ import java.util.Scanner;
 public class TaskChecker {
     @Value("${tests.max-count}")
     private int TEST_MAX_COUNT;
-    private static final String PATH_TO_CE_FILE = "/home/dmitry/Public/user-service/solutions/1/ce.txt";
+    //    private static final String PATH_TO_CE_FILE = "/home/dmitry/Public/user-service/solutions/1/ce.txt";
     private static final String PATH_TO_USER_FILE = "/home/dmitry/Public/user-service/solutions/";
     private static final String PATH_TO_INPUT = "/home/dmitry/Public/user-service/problems/";
     private final SolutionRepository solutionRepository;
@@ -54,7 +54,8 @@ public class TaskChecker {
 
         try {
             Process process = new ProcessBuilder(fileToDelete).start();
-        } catch (IOException e) {
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -96,11 +97,11 @@ public class TaskChecker {
         Process processCompilation = null;
         try {
             processCompilation = new ProcessBuilder(compilation).start();
+            processCompilation.waitFor();
 //            processCompilation.pid();
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-
 
 
         File folder = new File(pathToUserFolder);
@@ -120,7 +121,6 @@ public class TaskChecker {
             } catch (NullPointerException e) {
                 e.printStackTrace();
             }
-
 
         }
 
@@ -143,18 +143,21 @@ public class TaskChecker {
                 try {
                     String line;
                     Process process = new ProcessBuilder(command).start();
-                } catch (IOException e) {
+                    process.waitFor();
+                } catch (IOException | InterruptedException e) {
                     solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
                             "RUNTIME_ERROR");
                     e.printStackTrace();
                 }
 
+                System.out.println(userOutput);
                 while (userOutput.equals("")) {
                     userOutput = parseFile(pathToUserFolder + "output" + (i + 1) + ".txt");
                 }
                 trueOutput = parseFile(pathToInputFiles + "output" + (i + 1) + ".txt");
 
                 if (!userOutput.equals(trueOutput)) {
+                    System.out.println(userOutput);
                     solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
                             "Wrong answer. Test " + (i + 1));
                     i = Integer.MAX_VALUE;
@@ -162,6 +165,7 @@ public class TaskChecker {
                     solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
                             "True answer. Test " + (i + 1));
                 }
+                System.out.println(userOutput);
             }
         } else {
             solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
