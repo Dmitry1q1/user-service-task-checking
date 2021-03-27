@@ -21,7 +21,6 @@ import java.util.Scanner;
 public class TaskChecker {
     @Value("${tests.max-count}")
     private int TEST_MAX_COUNT;
-    //    private static final String PATH_TO_CE_FILE = "/home/dmitry/Public/user-service/solutions/1/ce.txt";
     private static final String PATH_TO_USER_FILE = "/home/dmitry/Public/user-service/solutions/";
     private static final String PATH_TO_INPUT = "/home/dmitry/Public/user-service/problems/";
     private final SolutionRepository solutionRepository;
@@ -30,7 +29,6 @@ public class TaskChecker {
         this.solutionRepository = solutionRepository;
     }
 
-    //    @Scheduled()
     @Scheduled(fixedDelay = 2000)
     public void scheduleFixedDelayTask() {
         System.out.println(
@@ -43,27 +41,34 @@ public class TaskChecker {
         String solutionText = solutions.get(0).getSolutionText();
 
         String pathToUserFolder = PATH_TO_USER_FILE + solutions.get(0).getUserId() + "/";
-        String pathToUserFolderCe = PATH_TO_USER_FILE + solutions.get(0).getUserId() + "/ce.txt";
 
-        String[] fileToDelete = new String[]{
-                "bash",
-                "-c",
-                "bash delete-files.sh " + pathToUserFolder +
-                        " 2>" + pathToUserFolderCe
-        };
 
-        try {
-            Process process = new ProcessBuilder(fileToDelete).start();
-            process.waitFor();
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+        String pathToFolderWithProblems = pathToUserFolder + solutions.get(0).getProblemId() + "/";
+        String pathToFolderWithUSerSolution = pathToFolderWithProblems + solutions.get(0).getId() + "/";
+
+        String pathToUserFolderCe = pathToFolderWithUSerSolution + "ce.txt";
+
+//        String[] fileToDelete = new String[]{
+//                "bash",
+//                "-c",
+//                "bash delete-files.sh " + pathToFolderWithUSerSolution +
+//                        " 2>" + pathToUserFolderCe
+//        };
+//
+//        try {
+//            Process process = new ProcessBuilder(fileToDelete).start();
+//            process.waitFor();
+//        } catch (IOException | InterruptedException e) {
+//            e.printStackTrace();
+//        }
 
         Writer output = null;
         try {
 
             new File(pathToUserFolder).mkdir();
-            File file = new File(pathToUserFolder + "source.cpp");
+            new File(pathToFolderWithProblems).mkdir();
+            new File(pathToFolderWithUSerSolution).mkdir();
+            File file = new File(pathToFolderWithUSerSolution + "source.cpp");
             if (file.createNewFile())
                 System.out.println("File created");
             else
@@ -90,7 +95,7 @@ public class TaskChecker {
         String[] compilation = new String[]{
                 "bash",
                 "-c",
-                "bash compilation.sh " + pathToUserFolder +
+                "bash compilation.sh " + pathToFolderWithUSerSolution +
                         " 2>" + pathToUserFolderCe
         };
 
@@ -98,31 +103,30 @@ public class TaskChecker {
         try {
             processCompilation = new ProcessBuilder(compilation).start();
             processCompilation.waitFor();
-//            processCompilation.pid();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 
 
-        File folder = new File(pathToUserFolder);
-
-        File[] files;
-        boolean isFileInDirectory = false;
-        while (!isFileInDirectory) {
-            try {
-                files = folder.listFiles();
-                if (files != null) {
-                    for (File fileInDirectory : files) {
-                        if (fileInDirectory.getName().equals("ce.txt")) {
-                            isFileInDirectory = true;
-                        }
-                    }
-                }
-            } catch (NullPointerException e) {
-                e.printStackTrace();
-            }
-
-        }
+//        File folder = new File(pathToUserFolder);
+//
+//        File[] files;
+//        boolean isFileInDirectory = false;
+//        while (!isFileInDirectory) {
+//            try {
+//                files = folder.listFiles();
+//                if (files != null) {
+//                    for (File fileInDirectory : files) {
+//                        if (fileInDirectory.getName().equals("ce.txt")) {
+//                            isFileInDirectory = true;
+//                        }
+//                    }
+//                }
+//            } catch (NullPointerException e) {
+//                e.printStackTrace();
+//            }
+//
+//        }
 
         String ceInformation = parseFile(pathToUserFolderCe);
         if (ceInformation.isEmpty()) {
@@ -131,10 +135,10 @@ public class TaskChecker {
             for (int i = 0; i < 4; i++) {
                 String[] command = new String[]{
                         "bash", "-c",
-                        "bash run-tests.sh " + pathToUserFolder + " ./source <"
+                        "bash run-tests.sh " + pathToFolderWithUSerSolution + " ./source <"
                                 + pathToInputFiles + "input" + (i + 1) + ".txt " +
-                                "1>" + pathToUserFolder + "output" + (i + 1) + ".txt 2>"
-                                + pathToUserFolder + "output" + (i + 1) + ".txt"
+                                "1>" + pathToFolderWithUSerSolution + "output" + (i + 1) + ".txt 2>"
+                                + pathToFolderWithUSerSolution + "output" + (i + 1) + ".txt"
                 };
 
                 String userOutput = "";
@@ -151,9 +155,9 @@ public class TaskChecker {
                 }
 
                 System.out.println(userOutput);
-                while (userOutput.equals("")) {
-                    userOutput = parseFile(pathToUserFolder + "output" + (i + 1) + ".txt");
-                }
+//                while (userOutput.equals("")) {
+                    userOutput = parseFile(pathToFolderWithUSerSolution + "output" + (i + 1) + ".txt");
+//                }
                 trueOutput = parseFile(pathToInputFiles + "output" + (i + 1) + ".txt");
 
                 if (!userOutput.equals(trueOutput)) {
