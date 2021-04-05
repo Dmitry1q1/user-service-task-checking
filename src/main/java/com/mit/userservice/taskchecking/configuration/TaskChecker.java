@@ -9,20 +9,20 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Configuration
 @EnableScheduling
 public class TaskChecker {
     @Value("${tests.max-count}")
     private int TEST_MAX_COUNT;
-    private static final String PATH_TO_USER_FILE = "/home/dmitry/Public/user-service/solutions/";
-    private static final String PATH_TO_INPUT = "/home/dmitry/Public/user-service/problems/";
+    @Value("${path.user-files}")
+    private String PATH_TO_USER_FILE;
+    @Value("${path.input-files}")
+    private String PATH_TO_INPUT;
     private final SolutionRepository solutionRepository;
 
     public TaskChecker(SolutionRepository solutionRepository) {
@@ -31,163 +31,139 @@ public class TaskChecker {
 
     @Scheduled(fixedDelay = 2000)
     public void scheduleFixedDelayTask() {
-        System.out.println(
-                "Fixed delay task - " + LocalDateTime.now());
+
         List<Solution> solutions = new ArrayList<>();
         solutions = solutionRepository.getAllSolutions("READY_TO_COMPILE");
 
-        solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
-                "ON_COMPILE");
-        String solutionText = solutions.get(0).getSolutionText();
+        if (solutions.size() > 0) {
 
-        String pathToUserFolder = PATH_TO_USER_FILE + solutions.get(0).getUserId() + "/";
+            solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
+                    "ON_COMPILE");
+            String solutionText = solutions.get(0).getSolutionText();
 
-
-        String pathToFolderWithProblems = pathToUserFolder + solutions.get(0).getProblemId() + "/";
-        String pathToFolderWithUSerSolution = pathToFolderWithProblems + solutions.get(0).getId() + "/";
-
-        String pathToUserFolderCe = pathToFolderWithUSerSolution + "ce.txt";
-
-//        String[] fileToDelete = new String[]{
-//                "bash",
-//                "-c",
-//                "bash delete-files.sh " + pathToFolderWithUSerSolution +
-//                        " 2>" + pathToUserFolderCe
-//        };
-//
-//        try {
-//            Process process = new ProcessBuilder(fileToDelete).start();
-//            process.waitFor();
-//        } catch (IOException | InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
-        Writer output = null;
-        try {
-
-            new File(pathToUserFolder).mkdir();
-            new File(pathToFolderWithProblems).mkdir();
-            new File(pathToFolderWithUSerSolution).mkdir();
-            File file = new File(pathToFolderWithUSerSolution + "source.cpp");
-            if (file.createNewFile())
-                System.out.println("File created");
-            else
-                System.out.println("File already exists");
-            output = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(file), StandardCharsets.UTF_8));
-
-            output.write(solutionText);
+            String pathToUserFolder = PATH_TO_USER_FILE + solutions.get(0).getUserId() + "/";
 
 
-            System.out.println("File has been written");
+            String pathToFolderWithProblems = pathToUserFolder + solutions.get(0).getProblemId() + "/";
+            String pathToFolderWithUSerSolution = pathToFolderWithProblems + solutions.get(0).getId() + "/";
 
-        } catch (Exception e) {
-            System.out.println("Could not create file");
-        } finally {
+            String pathToUserFolderCe = pathToFolderWithUSerSolution + "ce.txt";
+
+            Writer output = null;
             try {
-                output.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+
+                new File(pathToUserFolder).mkdir();
+                new File(pathToFolderWithProblems).mkdir();
+                new File(pathToFolderWithUSerSolution).mkdir();
+                File file = new File(pathToFolderWithUSerSolution + "source.cpp");
+                if (file.createNewFile()){
+                    System.out.println("File created");
+                }
+                else{
+                    System.out.println("File already exists");
+                }
+
+                output = new BufferedWriter(new OutputStreamWriter(
+                        new FileOutputStream(file), StandardCharsets.UTF_8));
+
+                output.write(solutionText);
 
 
-        String[] compilation = new String[]{
-                "bash",
-                "-c",
-                "bash compilation.sh " + pathToFolderWithUSerSolution +
-                        " 2>" + pathToUserFolderCe
-        };
 
-        Process processCompilation = null;
-        try {
-            processCompilation = new ProcessBuilder(compilation).start();
-            processCompilation.waitFor();
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
-//        File folder = new File(pathToUserFolder);
-//
-//        File[] files;
-//        boolean isFileInDirectory = false;
-//        while (!isFileInDirectory) {
-//            try {
-//                files = folder.listFiles();
-//                if (files != null) {
-//                    for (File fileInDirectory : files) {
-//                        if (fileInDirectory.getName().equals("ce.txt")) {
-//                            isFileInDirectory = true;
-//                        }
-//                    }
-//                }
-//            } catch (NullPointerException e) {
-//                e.printStackTrace();
-//            }
-//
-//        }
-
-        String ceInformation = parseFile(pathToUserFolderCe);
-        if (ceInformation.isEmpty()) {
-
-            String pathToInputFiles = PATH_TO_INPUT + solutions.get(0).getProblemId() + "/";
-            for (int i = 0; i < 4; i++) {
-                String[] command = new String[]{
-                        "bash", "-c",
-                        "bash run-tests.sh " + pathToFolderWithUSerSolution + " ./source <"
-                                + pathToInputFiles + "input" + (i + 1) + ".txt " +
-                                "1>" + pathToFolderWithUSerSolution + "output" + (i + 1) + ".txt 2>"
-                                + pathToFolderWithUSerSolution + "output" + (i + 1) + ".txt"
-                };
-
-                String userOutput = "";
-                String trueOutput;
-
+            } catch (Exception e) {
+                System.out.println("Could not create file");
+            } finally {
                 try {
-                    String line;
-                    Process process = new ProcessBuilder(command).start();
-                    process.waitFor();
-                } catch (IOException | InterruptedException e) {
-                    solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
-                            "RUNTIME_ERROR");
+                    output.close();
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
-
-                System.out.println(userOutput);
-//                while (userOutput.equals("")) {
-                    userOutput = parseFile(pathToFolderWithUSerSolution + "output" + (i + 1) + ".txt");
-//                }
-                trueOutput = parseFile(pathToInputFiles + "output" + (i + 1) + ".txt");
-
-                if (!userOutput.equals(trueOutput)) {
-                    System.out.println(userOutput);
-                    solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
-                            "Wrong answer. Test " + (i + 1));
-                    i = Integer.MAX_VALUE;
-                } else {
-                    solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
-                            "True answer. Test " + (i + 1));
-                }
-                System.out.println(userOutput);
             }
-        } else {
-            solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
-                    "COMPILATION_ERROR");
+
+
+            String[] compilation = new String[]{
+                    "bash",
+                    "-c",
+                    "bash compilation.sh " + pathToFolderWithUSerSolution +
+                            " 2>" + pathToUserFolderCe
+            };
+
+            Process processCompilation = null;
+            try {
+                processCompilation = new ProcessBuilder(compilation).start();
+                processCompilation.waitFor();
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+
+
+            String ceInformation = parseFile(pathToUserFolderCe);
+            System.out.println(ceInformation);
+            if (ceInformation.isEmpty()) {
+
+                String pathToInputFiles = PATH_TO_INPUT + solutions.get(0).getProblemId() + "/";
+                AtomicInteger i = new AtomicInteger(0);
+                for (; i.get() < TEST_MAX_COUNT; i.getAndIncrement()) {
+                    String[] command = new String[]{
+                            "bash", "-c",
+                            "bash run-tests.sh " + pathToFolderWithUSerSolution + " ./source <"
+                                    + pathToInputFiles + "input" + (i.get() + 1) + ".txt " +
+                                    "1>" + pathToFolderWithUSerSolution + "output" + (i.get() + 1) + ".txt 2>"
+                                    + pathToFolderWithUSerSolution + "output" + (i.get() + 1) + ".txt"
+                    };
+
+                    String userOutput = "";
+                    String trueOutput;
+
+                    try {
+                        String line;
+                        Process process = new ProcessBuilder(command).start();
+                        process.waitFor();
+                    } catch (IOException | InterruptedException e) {
+                        solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
+                                "RUNTIME_ERROR");
+                        e.printStackTrace();
+                    }
+
+
+                    userOutput = parseFile(pathToFolderWithUSerSolution + "output" + (i.get() + 1) + ".txt");
+                    trueOutput = parseFile(pathToInputFiles + "output" + (i.get() + 1) + ".txt");
+
+                    if (!userOutput.equals(trueOutput)) {
+                        System.out.println(userOutput);
+                        solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
+                                "Wrong answer. Test " + (i.get() + 1));
+                        i.getAndAdd(Integer.MAX_VALUE);
+                    } else {
+                        solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
+                                "True answer. Test " + (i.get() + 1));
+                    }
+                }
+            } else {
+                solutionRepository.changeSolutionStatus(solutions.get(0).getId(),
+                        "COMPILATION_ERROR");
+            }
+
         }
     }
 
 
     private String parseFile(String path_to_ce_file) {
         String solutionText = "";
-        try (Scanner scanner = new Scanner(
-                Path.of(path_to_ce_file)).useDelimiter("\\Z")) {
-            if (scanner.hasNext()) {
-                solutionText = scanner.next();
+
+        StringBuilder sb = new StringBuilder();
+        try {
+            Scanner in = new Scanner(new FileReader(path_to_ce_file));
+
+            while(in.hasNext()) {
+                sb.append(in.next());
             }
-        } catch (IOException e) {
+            in.close();
+            solutionText = sb.toString();
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+
         return solutionText;
     }
 }
