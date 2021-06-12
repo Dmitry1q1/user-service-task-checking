@@ -1,6 +1,6 @@
 package com.mit.userservice.taskchecking.repository;
 
-import com.mit.userservice.taskchecking.Solution;
+import com.mit.userservice.taskchecking.model.Solution;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;

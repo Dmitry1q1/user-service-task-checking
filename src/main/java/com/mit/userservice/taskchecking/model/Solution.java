@@ -1,6 +1,8 @@
-package com.mit.userservice.taskchecking;
+package com.mit.userservice.taskchecking.model;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,6 +29,17 @@ public class Solution {
 
     @Column(name = "status_description")
     private String statusDescription;
+
+    @Column(name = "programming_language_id")
+    private long programmingLanguageId;
+
+    public long getProgrammingLanguageId() {
+        return programmingLanguageId;
+    }
+
+    public void setProgrammingLanguageId(long programmingLanguageId) {
+        this.programmingLanguageId = programmingLanguageId;
+    }
 
     public long getId() {
         return id;
