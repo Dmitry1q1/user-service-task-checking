@@ -76,16 +76,14 @@ public class JavaAction implements Action {
 
             String userOutput = parseFile(pathToFolderWithUSerSolution + "output" + (i + 1) + ".txt");
             String trueOutput = parseFile(pathToInputFiles + "output" + (i + 1) + ".txt");
-
-            if (isTestPassed(trueOutput, userOutput)) {
+            if (!isTestPassed(trueOutput, userOutput)) {
                 solutionRepository.changeSolutionStatus(solution.getId(),
                         WRONG_ANSWER.value + " Test " + (i + 1));
                 return;
-            } else {
-                solutionRepository.changeSolutionStatus(solution.getId(),
-                        PROBLEM_SOLVED.value);
             }
         }
+        solutionRepository.changeSolutionStatus(solution.getId(),
+                PROBLEM_SOLVED.value);
     }
 
     @Override
