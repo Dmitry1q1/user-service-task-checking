@@ -1,6 +1,7 @@
 package com.mit.userservice.taskchecking.model;
 
 import com.mit.userservice.taskchecking.repository.SolutionRepository;
+import com.mit.userservice.taskchecking.repository.TestRepository;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,11 +25,9 @@ public class JavaAction implements Action {
     String pathToUserFolderCe;
     Solution solution;
     SolutionRepository solutionRepository;
-    //    @Value("${tests.max-count}")
-    private String TEST_MAX_COUNT;
-    //    @Value("${path.user-files}")
+    TestRepository testRepository;
+
     private String PATH_TO_USER_FILE;
-    //    @Value("${path.input-files}")
     private String PATH_TO_INPUT;
 
     @Override
@@ -54,13 +54,15 @@ public class JavaAction implements Action {
     public void runTests() {
         String pathToInputFiles = PATH_TO_INPUT + solution.getProblemId() + "/";
 
-        for (int i = 0; i < Integer.parseInt(TEST_MAX_COUNT); i++) {
+        List<Test> tests = testRepository.getAllTestsForProblem(solution.getProblemId());
+        for(Test test: tests){
+            long i = test.getOrderNumber();
             String[] command = new String[]{
                     "bash", "-c",
                     "bash java-run-tests.sh " + pathToFolderWithUSerSolution + " " + fileName + " < "
-                            + pathToInputFiles + "input" + (i + 1) + ".txt " +
-                            "1>" + pathToFolderWithUSerSolution + "output" + (i + 1) + ".txt 2>"
-                            + pathToFolderWithUSerSolution + "output" + (i + 1) + ".txt"
+                            + pathToInputFiles + "input" + i + ".txt " +
+                            "1>" + pathToFolderWithUSerSolution + "output" + i + ".txt 2>"
+                            + pathToFolderWithUSerSolution + "output" + i + ".txt"
             };
 
 
@@ -74,11 +76,11 @@ public class JavaAction implements Action {
             }
 
 
-            String userOutput = parseFile(pathToFolderWithUSerSolution + "output" + (i + 1) + ".txt");
-            String trueOutput = parseFile(pathToInputFiles + "output" + (i + 1) + ".txt");
+            String userOutput = parseFile(pathToFolderWithUSerSolution + "output" + i + ".txt");
+            String trueOutput = parseFile(pathToInputFiles + "output" + i + ".txt");
             if (!isTestPassed(trueOutput, userOutput)) {
                 solutionRepository.changeSolutionStatus(solution.getId(),
-                        WRONG_ANSWER.value + " Test " + (i + 1));
+                        WRONG_ANSWER.value + " Test " + i);
                 return;
             }
         }
@@ -87,10 +89,10 @@ public class JavaAction implements Action {
     }
 
     @Override
-    public void runChecker(Solution solution, SolutionRepository solutionRepository, String TEST_MAX_COUNT, String PATH_TO_USER_FILE, String PATH_TO_INPUT) {
+    public void runChecker(Solution solution, SolutionRepository solutionRepository, TestRepository testRepository, String PATH_TO_USER_FILE, String PATH_TO_INPUT) {
         this.solution = solution;
         this.solutionRepository = solutionRepository;
-        this.TEST_MAX_COUNT = TEST_MAX_COUNT;
+        this.testRepository = testRepository;
         this.PATH_TO_USER_FILE = PATH_TO_USER_FILE;
         this.PATH_TO_INPUT = PATH_TO_INPUT;
         prepareSystemToStartChecker();

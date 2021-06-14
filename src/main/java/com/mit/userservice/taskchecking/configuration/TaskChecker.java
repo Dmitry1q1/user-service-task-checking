@@ -5,6 +5,7 @@ import com.mit.userservice.taskchecking.model.JavaTaskChecker;
 import com.mit.userservice.taskchecking.model.ProgrammingLanguageTaskChecker;
 import com.mit.userservice.taskchecking.model.Solution;
 import com.mit.userservice.taskchecking.repository.SolutionRepository;
+import com.mit.userservice.taskchecking.repository.TestRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -20,6 +21,7 @@ import static com.mit.userservice.taskchecking.config.SolutionStatus.READY_TO_CO
 public class TaskChecker {
 
     private final SolutionRepository solutionRepository;
+    private final TestRepository testRepository;
     @Value("${tests.max-count}")
     private String TEST_MAX_COUNT;
     @Value("${path.user-files}")
@@ -28,8 +30,9 @@ public class TaskChecker {
     private String PATH_TO_INPUT;
     private ProgrammingLanguageTaskChecker programmingLanguageTaskChecker;
 
-    public TaskChecker(SolutionRepository solutionRepository) {
+    public TaskChecker(SolutionRepository solutionRepository, TestRepository testRepository) {
         this.solutionRepository = solutionRepository;
+        this.testRepository = testRepository;
     }
 
     @Scheduled(fixedDelay = 2000)
@@ -50,7 +53,7 @@ public class TaskChecker {
     }
 
     private void runTaskChecker(Solution solution) {
-        programmingLanguageTaskChecker.runTaskChecker(solution, solutionRepository, TEST_MAX_COUNT, PATH_TO_USER_FILE, PATH_TO_INPUT);
+        programmingLanguageTaskChecker.runTaskChecker(solution, solutionRepository, testRepository, PATH_TO_USER_FILE, PATH_TO_INPUT);
     }
 
     private void configure(Solution solution) {

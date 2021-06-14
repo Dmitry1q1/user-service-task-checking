@@ -1,6 +1,7 @@
 package com.mit.userservice.taskchecking.model;
 
 import com.mit.userservice.taskchecking.repository.SolutionRepository;
+import com.mit.userservice.taskchecking.repository.TestRepository;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -11,7 +12,7 @@ public interface Action {
 
     void runTests();
 
-    void runChecker(Solution solution, SolutionRepository solutionRepository, String TEST_MAX_COUNT, String PATH_TO_USER_FILE, String PATH_TO_INPUT);
+    void runChecker(Solution solution, SolutionRepository solutionRepository, TestRepository testRepository, String PATH_TO_USER_FILE, String PATH_TO_INPUT);
 
     boolean isTestPassed(String expected, String received);
 
